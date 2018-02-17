@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * 主页控制器.
- *
  */
 @Controller
 @RequestMapping("/blogs")

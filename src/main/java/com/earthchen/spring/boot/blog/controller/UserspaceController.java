@@ -1,11 +1,19 @@
 package com.earthchen.spring.boot.blog.controller;
 
+import com.earthchen.spring.boot.blog.domain.User;
+import com.earthchen.spring.boot.blog.service.UserService;
+import com.earthchen.spring.boot.blog.vo.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * 用户主页空间控制器.
@@ -15,11 +23,88 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Slf4j
 public class UserspaceController {
 
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Autowired
+    private UserService userService;
+
     @GetMapping("/{username}")
     public String userSpace(@PathVariable("username") String username) {
-        log.info("username" + username);
+        System.out.println("username" + username);
         return "u";
     }
+
+    @GetMapping("/{username}/profile")
+    @PreAuthorize("authentication.name.equals(#username)")
+    public ModelAndView profile(@PathVariable("username") String username, Model model) {
+        User user = (User) userDetailsService.loadUserByUsername(username);
+        model.addAttribute("user", user);
+        return new ModelAndView("/userspace/profile", "userModel", model);
+    }
+
+    /**
+     * 保存个人设置
+     *
+     * @param username
+     * @param user
+     * @return
+     */
+    @PostMapping("/{username}/profile")
+    @PreAuthorize("authentication.name.equals(#username)")
+    public String saveProfile(@PathVariable("username") String username, User user) {
+        User originalUser = userService.getUserById(user.getId());
+        originalUser.setEmail(user.getEmail());
+        originalUser.setName(user.getName());
+
+        // 判断密码是否做了变更
+        String rawPassword = originalUser.getPassword();
+        PasswordEncoder encoder = new BCryptPasswordEncoder();
+        String encodePasswd = encoder.encode(user.getPassword());
+        boolean isMatch = encoder.matches(rawPassword, encodePasswd);
+        if (!isMatch) {
+            originalUser.setEncodePassword(user.getPassword());
+        }
+
+        userService.saveUser(originalUser);
+        return "redirect:/u/" + username + "/profile";
+    }
+
+    /**
+     * 获取编辑头像的界面
+     *
+     * @param username
+     * @param model
+     * @return
+     */
+    @GetMapping("/{username}/avatar")
+    @PreAuthorize("authentication.name.equals(#username)")
+    public ModelAndView avatar(@PathVariable("username") String username, Model model) {
+        User user = (User) userDetailsService.loadUserByUsername(username);
+        model.addAttribute("user", user);
+        return new ModelAndView("/userspace/avatar", "userModel", model);
+    }
+
+
+    /**
+     * 获取编辑头像的界面
+     *
+     * @param username
+     * @param user
+     * @return
+     */
+    @PostMapping("/{username}/avatar")
+    @PreAuthorize("authentication.name.equals(#username)")
+    public ResponseEntity<Response> saveAvatar(@PathVariable("username") String username, User user) {
+        String avatarUrl = user.getAvatar();
+
+        User originalUser = userService.getUserById(user.getId());
+        originalUser.setAvatar(avatarUrl);
+        userService.saveUser(originalUser);
+
+        return ResponseEntity.ok().body(new Response(true, "处理成功", avatarUrl));
+    }
+
 
     @GetMapping("/{username}/blogs")
     public String listBlogsByOrder(@PathVariable("username") String username,
@@ -29,33 +114,32 @@ public class UserspaceController {
 
         if (category != null) {
 
-            log.info("category:" + category);
-            log.info("selflink:" + "redirect:/u/" + username + "/blogs?category=" + category);
+            System.out.print("category:" + category);
+            System.out.print("selflink:" + "redirect:/u/" + username + "/blogs?category=" + category);
             return "/u";
 
-        } else if (keyword != null && !keyword.isEmpty()) {
+        } else if (keyword != null && keyword.isEmpty() == false) {
 
-            log.info("keyword:" + keyword);
-            log.info("selflink:" + "redirect:/u/" + username + "/blogs?keyword=" + keyword);
+            System.out.print("keyword:" + keyword);
+            System.out.print("selflink:" + "redirect:/u/" + username + "/blogs?keyword=" + keyword);
             return "/u";
         }
 
-        log.info("order:" + order);
-        log.info("selflink:" + "redirect:/u/" + username + "/blogs?order=" + order);
+        System.out.print("order:" + order);
+        System.out.print("selflink:" + "redirect:/u/" + username + "/blogs?order=" + order);
         return "/u";
     }
 
     @GetMapping("/{username}/blogs/{id}")
     public String listBlogsByOrder(@PathVariable("id") Long id) {
 
-        log.info("blogId:" + id);
+        System.out.print("blogId:" + id);
         return "/blog";
     }
 
 
     @GetMapping("/{username}/blogs/edit")
     public String editBlog() {
-
         return "/blogedit";
     }
 }
