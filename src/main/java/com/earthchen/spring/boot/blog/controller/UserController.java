@@ -24,10 +24,11 @@ import java.util.List;
 
 /**
  * 用户控制器.
+ * // 指定角色权限才能操作方法
  */
 @RestController
 @RequestMapping("/users")
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")  // 指定角色权限才能操作方法
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class UserController {
 
     @Autowired
@@ -54,11 +55,12 @@ public class UserController {
 
         Pageable pageable = new PageRequest(pageIndex, pageSize);
         Page<User> page = userService.listUsersByNameLike(name, pageable);
-        List<User> list = page.getContent();    // 当前所在页面数据列表
+        // 当前所在页面数据列表
+        List<User> list = page.getContent();
 
         model.addAttribute("page", page);
         model.addAttribute("userList", list);
-        return new ModelAndView(async == true ? "users/list :: #mainContainerRepleace" : "users/list", "userModel", model);
+        return new ModelAndView(async ? "users/list :: #mainContainerRepleace" : "users/list", "userModel", model);
     }
 
     /**
@@ -87,7 +89,8 @@ public class UserController {
         user.setAuthorities(authorities);
 
         if (user.getId() == null) {
-            user.setEncodePassword(user.getPassword()); // 加密密码
+            // 加密密码
+            user.setEncodePassword(user.getPassword());
         } else {
             // 判断密码是否做了变更
             User originalUser = userService.getUserById(user.getId());
