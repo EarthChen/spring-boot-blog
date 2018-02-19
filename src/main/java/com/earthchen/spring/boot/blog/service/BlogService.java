@@ -47,7 +47,9 @@ public interface BlogService {
 
     /**
      * 根据用户名进行分页模糊查询（最热）
-     * @param user
+     * @param suser
+     * @param title
+     * @param pageable
      * @return
      */
     Page<Blog> listBlogsByTitleLikeAndSort(User suser, String title, Pageable pageable);
@@ -57,4 +59,20 @@ public interface BlogService {
      * @param id
      */
     void readingIncrease(Long id);
+
+    /**
+     * 发表评论
+     * @param blogId
+     * @param commentContent
+     * @return
+     */
+    Blog createComment(Long blogId, String commentContent);
+
+    /**
+     * 删除评论
+     * @param blogId
+     * @param commentId
+     * @return
+     */
+    void removeComment(Long blogId, Long commentId);
 }

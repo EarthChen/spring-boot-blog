@@ -44,9 +44,10 @@ public class UserspaceController {
     private BlogService blogService;
 
     @GetMapping("/{username}")
-    public String userSpace(@PathVariable("username") String username) {
-        System.out.println("username" + username);
-        return "u";
+    public String userSpace(@PathVariable("username") String username, Model model) {
+        User user = (User) userDetailsService.loadUserByUsername(username);
+        model.addAttribute("user", user);
+        return "redirect:/u/" + username + "/blogs";
     }
 
     @GetMapping("/{username}/profile")
@@ -104,7 +105,7 @@ public class UserspaceController {
      * 保存头像
      *
      * @param username
-     * @param model
+     * @param user
      * @return
      */
     @PostMapping("/{username}/avatar")
