@@ -36,7 +36,7 @@
                            th:text="${blogModel.user.username}">waylau</a>
                         <span th:text="${#dates.format(blogModel.createTime,'yyy-MM-dd HH:mm:ss')}"></span>
                         <i class="fa fa-eye" aria-hidden="true" th:text="${blogModel.readSize}"></i>
-                        <i class="fa fa-heart-o" aria-hidden="true" th:text="${blogModel.likeSize}"></i>
+                        <i class="fa fa-heart-o" aria-hidden="true" th:text="${blogModel.voteSize}"></i>
                         <i class="fa fa-comment-o" aria-hidden="true" th:text="${blogModel.commentSize}"></i>
                         <a href="/u/waylau" th:if="${isBlogOwner}"
                            th:href="'/u/' + ${blogModel.user.username}+ '/blogs/edit/'+ ${blogModel.id}"
@@ -79,6 +79,11 @@
                         </div>
                     </div>
                     <button class="btn btn-primary float-right" id="submitComment">发表评论</button>
+                    <button class="btn btn-primary float-right" th:if="${currentVote} == null" id="submitVote">点赞
+                    </button>
+                    <button class="btn btn-primary float-right" th:if="${currentVote}"
+                            th:attr="voteId=${currentVote.id}" id="cancelVote">取消点赞
+                    </button>
 
                 </div>
                 <div class="card-block" id="mainContainer">

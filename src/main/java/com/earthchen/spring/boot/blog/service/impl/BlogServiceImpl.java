@@ -4,6 +4,7 @@ import com.earthchen.spring.boot.blog.dao.BlogDao;
 import com.earthchen.spring.boot.blog.domain.Blog;
 import com.earthchen.spring.boot.blog.domain.Comment;
 import com.earthchen.spring.boot.blog.domain.User;
+import com.earthchen.spring.boot.blog.domain.Vote;
 import com.earthchen.spring.boot.blog.service.BlogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,43 +24,31 @@ public class BlogServiceImpl implements BlogService {
     @Autowired
     private BlogDao blogRepository;
 
-    /* (non-Javadoc)
-     * @see com.waylau.spring.boot.blog.service.BlogService#saveBlog(com.waylau.spring.boot.blog.domain.Blog)
-     */
     @Transactional
     @Override
     public Blog saveBlog(Blog blog) {
         return blogRepository.save(blog);
     }
 
-    /* (non-Javadoc)
-     * @see com.waylau.spring.boot.blog.service.BlogService#removeBlog(java.lang.Long)
-     */
     @Transactional
     @Override
     public void removeBlog(Long id) {
         blogRepository.delete(id);
     }
 
-    /* (non-Javadoc)
-     * @see com.waylau.spring.boot.blog.service.BlogService#updateBlog(com.waylau.spring.boot.blog.domain.Blog)
-     */
     @Transactional
     @Override
     public Blog updateBlog(Blog blog) {
         return blogRepository.save(blog);
     }
 
-    /* (non-Javadoc)
-     * @see com.waylau.spring.boot.blog.service.BlogService#getBlogById(java.lang.Long)
-     */
     @Override
     public Blog getBlogById(Long id) {
         return blogRepository.findOne(id);
     }
 
     @Override
-    public Page<Blog> listBlogsByTitleLike(User user, String title, Pageable pageable) {
+    public Page<Blog> listBlogsByTitleVote(User user, String title, Pageable pageable) {
         // 模糊查询
         title = "%" + title + "%";
         Page<Blog> blogs = blogRepository.findByUserAndTitleLikeOrderByCreateTimeDesc(user, title, pageable);
@@ -67,7 +56,7 @@ public class BlogServiceImpl implements BlogService {
     }
 
     @Override
-    public Page<Blog> listBlogsByTitleLikeAndSort(User user, String title, Pageable pageable) {
+    public Page<Blog> listBlogsByTitleVoteAndSort(User user, String title, Pageable pageable) {
         // 模糊查询
         title = "%" + title + "%";
         Page<Blog> blogs = blogRepository.findByUserAndTitleLike(user, title, pageable);
@@ -96,5 +85,23 @@ public class BlogServiceImpl implements BlogService {
         originalBlog.removeComment(commentId);
         blogRepository.save(originalBlog);
     }
-}
 
+    @Override
+    public Blog createVote(Long blogId) {
+        Blog originalBlog = blogRepository.findOne(blogId);
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Vote vote = new Vote(user);
+        boolean isExist = originalBlog.addVote(vote);
+        if (isExist) {
+            throw new IllegalArgumentException("该用户已经点过赞了");
+        }
+        return blogRepository.save(originalBlog);
+    }
+
+    @Override
+    public void removeVote(Long blogId, Long voteId) {
+        Blog originalBlog = blogRepository.findOne(blogId);
+        originalBlog.removeVote(voteId);
+        blogRepository.save(originalBlog);
+    }
+}

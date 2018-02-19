@@ -2,6 +2,7 @@ package com.earthchen.spring.boot.blog.controller;
 
 import com.earthchen.spring.boot.blog.domain.Blog;
 import com.earthchen.spring.boot.blog.domain.User;
+import com.earthchen.spring.boot.blog.domain.Vote;
 import com.earthchen.spring.boot.blog.service.BlogService;
 import com.earthchen.spring.boot.blog.service.UserService;
 import com.earthchen.spring.boot.blog.util.ConstraintViolationExceptionHandler;
@@ -31,9 +32,7 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/u")
-@Slf4j
 public class UserspaceController {
-
     @Autowired
     private UserDetailsService userDetailsService;
 
@@ -143,20 +142,18 @@ public class UserspaceController {
 
 
         Page<Blog> page = null;
-        // 最热查询
-        if ("hot".equals(order)) {
-            Sort sort = new Sort(Sort.Direction.DESC, "reading", "comments", "likes");
+        if (order.equals("hot")) { // 最热查询
+            Sort sort = new Sort(Sort.Direction.DESC, "readSize", "commentSize", "voteSize");
             Pageable pageable = new PageRequest(pageIndex, pageSize, sort);
-            page = blogService.listBlogsByTitleLikeAndSort(user, keyword, pageable);
+            page = blogService.listBlogsByTitleVoteAndSort(user, keyword, pageable);
         }
-        // 最新查询
-        if ("new".equals(order)) {
+        if (order.equals("new")) { // 最新查询
             Pageable pageable = new PageRequest(pageIndex, pageSize);
-            page = blogService.listBlogsByTitleLike(user, keyword, pageable);
+            page = blogService.listBlogsByTitleVote(user, keyword, pageable);
         }
 
-        // 当前所在页面数据列表
-        List<Blog> list = page.getContent();
+
+        List<Blog> list = page.getContent();    // 当前所在页面数据列表
 
         model.addAttribute("order", order);
         model.addAttribute("page", page);
@@ -173,22 +170,37 @@ public class UserspaceController {
      */
     @GetMapping("/{username}/blogs/{id}")
     public String getBlogById(@PathVariable("username") String username, @PathVariable("id") Long id, Model model) {
+        User principal = null;
+        Blog blog = blogService.getBlogById(id);
+
         // 每次读取，简单的可以认为阅读量增加1次
         blogService.readingIncrease(id);
 
-        boolean isBlogOwner = false;
-
         // 判断操作用户是否是博客的所有者
+        boolean isBlogOwner = false;
         if (SecurityContextHolder.getContext().getAuthentication() != null && SecurityContextHolder.getContext().getAuthentication().isAuthenticated()
-                && !"anonymousUser".equals(SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString())) {
-            User principal = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                && !SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString().equals("anonymousUser")) {
+            principal = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             if (principal != null && username.equals(principal.getUsername())) {
                 isBlogOwner = true;
             }
         }
 
+        // 判断操作用户的点赞情况
+        List<Vote> votes = blog.getVotes();
+        Vote currentVote = null; // 当前用户的点赞情况
+
+        if (principal != null) {
+            for (Vote vote : votes) {
+                vote.getUser().getUsername().equals(principal.getUsername());
+                currentVote = vote;
+                break;
+            }
+        }
+
         model.addAttribute("isBlogOwner", isBlogOwner);
-        model.addAttribute("blogModel", blogService.getBlogById(id));
+        model.addAttribute("blogModel", blog);
+        model.addAttribute("currentVote", currentVote);
 
         return "/userspace/blog";
     }
@@ -249,10 +261,22 @@ public class UserspaceController {
     @PostMapping("/{username}/blogs/edit")
     @PreAuthorize("authentication.name.equals(#username)")
     public ResponseEntity<Response> saveBlog(@PathVariable("username") String username, @RequestBody Blog blog) {
-        User user = (User) userDetailsService.loadUserByUsername(username);
-        blog.setUser(user);
+
         try {
-            blogService.saveBlog(blog);
+            // 判断是修改还是新增
+
+            if (blog.getId() != null) {
+                Blog orignalBlog = blogService.getBlogById(blog.getId());
+                orignalBlog.setTitle(blog.getTitle());
+                orignalBlog.setContent(blog.getContent());
+                orignalBlog.setSummary(blog.getSummary());
+                blogService.saveBlog(orignalBlog);
+            } else {
+                User user = (User) userDetailsService.loadUserByUsername(username);
+                blog.setUser(user);
+                blogService.saveBlog(blog);
+            }
+
         } catch (ConstraintViolationException e) {
             return ResponseEntity.ok().body(new Response(false, ConstraintViolationExceptionHandler.getMessage(e)));
         } catch (Exception e) {
