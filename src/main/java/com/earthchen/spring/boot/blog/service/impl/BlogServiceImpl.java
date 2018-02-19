@@ -1,10 +1,7 @@
 package com.earthchen.spring.boot.blog.service.impl;
 
 import com.earthchen.spring.boot.blog.dao.BlogDao;
-import com.earthchen.spring.boot.blog.domain.Blog;
-import com.earthchen.spring.boot.blog.domain.Comment;
-import com.earthchen.spring.boot.blog.domain.User;
-import com.earthchen.spring.boot.blog.domain.Vote;
+import com.earthchen.spring.boot.blog.domain.*;
 import com.earthchen.spring.boot.blog.service.BlogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -103,5 +100,10 @@ public class BlogServiceImpl implements BlogService {
         Blog originalBlog = blogRepository.findOne(blogId);
         originalBlog.removeVote(voteId);
         blogRepository.save(originalBlog);
+    }
+
+    @Override
+    public Page<Blog> listBlogsByCatalog(Catalog catalog, Pageable pageable) {
+        return blogRepository.findByCatalog(catalog, pageable);
     }
 }

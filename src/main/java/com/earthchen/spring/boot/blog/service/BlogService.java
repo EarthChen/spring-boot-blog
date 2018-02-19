@@ -1,6 +1,7 @@
 package com.earthchen.spring.boot.blog.service;
 
 import com.earthchen.spring.boot.blog.domain.Blog;
+import com.earthchen.spring.boot.blog.domain.Catalog;
 import com.earthchen.spring.boot.blog.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -99,5 +100,15 @@ public interface BlogService {
      * @return
      */
     void removeVote(Long blogId, Long voteId);
+
+
+    /**
+     * 根据分类进行查询
+     *
+     * @param catalog
+     * @param pageable
+     * @return
+     */
+    Page<Blog> listBlogsByCatalog(Catalog catalog, Pageable pageable);
 }
 
