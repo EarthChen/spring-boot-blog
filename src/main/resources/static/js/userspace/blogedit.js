@@ -50,7 +50,7 @@ $(function () {
             $('#file').val('');
         }).fail(function (res) {
         });
-    })
+    });
 
     // 发布博客
     $("#submitBlog").click(function () {
@@ -69,7 +69,7 @@ $(function () {
                 "summary": $('#summary').val(),
                 "content": $('#md').val(),
                 "catalog": {"id": $('#catalogSelect').val()},
-                // "tags": $('.form-control-tag').val()
+                "tags": $('.form-control-tag').val()
             }),
             beforeSend: function (request) {
                 request.setRequestHeader(csrfHeader, csrfToken); // 添加  CSRF Token
