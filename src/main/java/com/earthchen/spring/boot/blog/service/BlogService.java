@@ -27,13 +27,6 @@ public interface BlogService {
      */
     void removeBlog(Long id);
 
-    /**
-     * 更新Blog
-     *
-     * @param Blog
-     * @return
-     */
-    Blog updateBlog(Blog blog);
 
     /**
      * 根据id获取Blog
