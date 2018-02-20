@@ -21,6 +21,12 @@ spring:
     password: 123456
     driver-class-name: com.mysql.jdbc.Driver
 
+  data:
+    elasticsearch:
+      properties:
+        transport.tcp.connect_timeout: 120s
+      cluster-nodes: 127.0.0.1:9300
+
 
 
 
